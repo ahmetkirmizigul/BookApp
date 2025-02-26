@@ -1,0 +1,108 @@
+﻿@model List<BookWithCategory>
+
+@{
+    ViewData["Title"] = "Kitap Listesi";
+}
+
+<h2>Kitap Listesi</h2>
+
+<!-- Filtreleme  -->
+<div class="mb-3">
+    <label for="categoryFilter">Kategoriye Göre Filtrele:</label>
+    <select id="categoryFilter" class="form-control" style="width: 200px; display: inline-block;">
+        <option value="">Tüm Kategoriler</option>
+        @foreach (var category in ViewBag.Categories)
+        {
+            <option value="@category.CategoryName">@category.CategoryName</option>
+        }
+    </select>
+
+    <button type="button" id="filterButton" class="btn btn-primary">Filtrele</button>
+    <button type="button" id="resetButton" class="btn btn-secondary">Sıfırla</button>
+</div>
+
+<!-- Kitap Listesi  -->
+<table class="table table-bordered" id="bookTable">
+    <thead>
+        <tr>
+            <th>Başlık</th>
+            <th>Yazar</th>
+            <th>Fiyat</th>
+            <th>Stok</th>
+            <th>Kategori</th>
+            <th>İşlemler</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var book in Model)
+        {
+            <tr id="book-@book.BookID">
+                <td>@book.Title</td>
+                <td>@book.Author</td>
+                <td class="price">@book.Price.ToString("C")</td>
+                <td>@book.Stock</td>
+                <td class="category">@book.CategoryName</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@book.BookID" class="btn btn-warning">Düzenle</a>
+                    <button onclick="deleteBook(@book.BookID)" class="btn btn-danger">Sil</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="Create" class="btn btn-success">Yeni Kitap Ekle</a>
+
+@section Scripts {
+
+    <script src="~/lib/jquery/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+
+            // filtreleme
+            $('#filterButton').click(function() {
+                var selectedCategory = $('#categoryFilter').val().trim();
+
+                $('#bookTable tbody tr').each(function() {
+                    var rowCategory = $(this).find('.category').text().trim();
+
+                    if (selectedCategory === "" || rowCategory === selectedCategory) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            });
+
+            // Sıfırla 
+            $('#resetButton').click(function() {
+                $('#categoryFilter').val("");
+                $('#bookTable tbody tr').show();
+            });
+
+              // AJAX - Kitap Silme
+             window.deleteBook = function (bookId) {
+            if (confirm("Bu kitabı silmek istediğinize emin misiniz?")) {
+                $.ajax({
+                    url: '/Books/Delete',
+                    type: 'POST',
+                    data: { id: bookId },
+                    success: function (result) {
+                        if (result.success) {
+                            $("#book-" + bookId).fadeOut(500, function () { $(this).remove(); });
+                            //alert("Kitap başarıyla silindi.");
+                        } else {
+                            alert("Silme işlemi başarısız oldu.");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        alert("Silme işlemi sırasında bir hata oluştu: " + xhr.responseText);
+                    }
+                });
+            }
+        };
+
+
+        });
+    </script>
+}
